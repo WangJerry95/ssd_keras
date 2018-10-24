@@ -96,3 +96,9 @@ ENV/
 
 # Ignore any files and directories that begin with the word "local"
 local*
+
+
+.idea
+*.h5
+*.csv
+examples/

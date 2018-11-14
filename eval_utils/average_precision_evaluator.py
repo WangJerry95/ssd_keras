@@ -27,7 +27,7 @@ import warnings
 from data_generator.object_detection_2d_data_generator import DataGenerator
 from data_generator.object_detection_2d_geometric_ops import Resize
 from data_generator.object_detection_2d_patch_sampling_ops import RandomPadFixedAR
-from data_generator.object_detection_2d_photometric_ops import ConvertTo3Channels
+from data_generator.object_detection_2d_photometric_ops import ConvertTo3Channels, ConvertTo1Channel
 from ssd_encoder_decoder.ssd_output_decoder import decode_detections
 from data_generator.object_detection_2d_misc_utils import apply_inverse_transforms
 
@@ -111,7 +111,8 @@ class Evaluator:
                  decoding_iou_threshold=0.45,
                  decoding_top_k=200,
                  decoding_pred_coords='centroids',
-                 decoding_normalize_coords=True):
+                 decoding_normalize_coords=True,
+                 grayscale=False):
         '''
         Computes the mean average precision of the given Keras SSD model on the given dataset.
 
@@ -198,7 +199,8 @@ class Evaluator:
                                 decoding_border_pixels=border_pixels,
                                 round_confidences=round_confidences,
                                 verbose=verbose,
-                                ret=False)
+                                ret=False,
+                                grayscale=grayscale)
 
         #############################################################################################
         # Get the total number of ground truth boxes for each class.
@@ -268,7 +270,8 @@ class Evaluator:
                            decoding_border_pixels='include',
                            round_confidences=False,
                            verbose=True,
-                           ret=False):
+                           ret=False,
+                           grayscale=False):
         '''
         Runs predictions for the given model over the entire dataset given by `data_generator`.
 
@@ -317,6 +320,7 @@ class Evaluator:
         #############################################################################################
 
         convert_to_3_channels = ConvertTo3Channels()
+        convert_to_1_channel = ConvertTo1Channel()
         resize = Resize(height=img_height,width=img_width, labels_format=self.gt_format)
         if data_generator_mode == 'resize':
             transformations = [convert_to_3_channels,
@@ -326,9 +330,12 @@ class Evaluator:
             transformations = [convert_to_3_channels,
                                random_pad,
                                resize]
+
         else:
             raise ValueError("`data_generator_mode` can be either of 'resize' or 'pad', but received '{}'.".format(data_generator_mode))
 
+        if grayscale:
+            transformations.append(convert_to_1_channel)
         # Set the generator parameters.
         generator = self.data_generator.generate(batch_size=batch_size,
                                                  shuffle=False,
@@ -651,7 +658,8 @@ class Evaluator:
 
                 prediction = predictions_sorted[i]
                 image_id = prediction['image_id']
-                pred_box = np.asarray(list(prediction[['xmin', 'ymin', 'xmax', 'ymax']])) # Convert the structured array element to a regular array.
+                #pred_box = np.asarray(list(prediction[['xmin', 'ymin', 'xmax', 'ymax']])) # Convert the structured array element to a regular array.
+                pred_box = np.asarray([prediction['xmin'], prediction['ymin'], prediction['xmax'], prediction['ymax']])
 
                 # Get the relevant ground truth boxes for this prediction,
                 # i.e. all ground truth boxes that match the prediction's
@@ -664,18 +672,32 @@ class Evaluator:
                 else:
                     gt = ground_truth[image_id]
                 gt = np.asarray(gt)
+
+                if gt.size == 0:
+                    # If the image doesn't contain any objects of any class,
+                    # the prediction becomes a false positive.
+                    false_pos[i] = 1
+                    continue
                 class_mask = gt[:,class_id_gt] == class_id
                 gt = gt[class_mask]
-                if ignore_neutral_boxes and eval_neutral_available:
-                    eval_neutral = eval_neutral[class_mask]
-
                 if gt.size == 0:
                     # If the image doesn't contain any objects of this class,
                     # the prediction becomes a false positive.
                     false_pos[i] = 1
                     continue
 
+                if ignore_neutral_boxes and eval_neutral_available:
+                    eval_neutral = eval_neutral[class_mask]
+
+                # if gt.size == 0:
+                #     # If the image doesn't contain any objects of this class,
+                #     # the prediction becomes a false positive.
+                #     false_pos[i] = 1
+                #     continue
+
                 # Compute the IoU of this prediction with all ground truth boxes of the same class.
+                # import pdb
+                # pdb.set_trace()
                 overlaps = iou(boxes1=gt[:,[xmin_gt, ymin_gt, xmax_gt, ymax_gt]],
                                boxes2=pred_box,
                                coords='corners',

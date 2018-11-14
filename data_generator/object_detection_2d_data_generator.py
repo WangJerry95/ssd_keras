@@ -535,7 +535,6 @@ class DataGenerator:
             for filename in it:
                 with Image.open(filename) as image:
                     self.images.append(np.array(image, dtype=np.uint8))
-
         if ret:
             return self.images, self.filenames, self.labels, self.image_ids, self.eval_neutral
 
@@ -1094,22 +1093,24 @@ class DataGenerator:
 
                 if not (self.labels is None):
 
-                    xmin = self.labels_format['xmin']
-                    ymin = self.labels_format['ymin']
-                    xmax = self.labels_format['xmax']
-                    ymax = self.labels_format['ymax']
+                    if batch_y[i].size != 0:
 
-                    if np.any(batch_y[i][:,xmax] - batch_y[i][:,xmin] <= 0) or np.any(batch_y[i][:,ymax] - batch_y[i][:,ymin] <= 0):
-                        if degenerate_box_handling == 'warn':
-                            warnings.warn("Detected degenerate ground truth bounding boxes for batch item {} with bounding boxes {}, ".format(i, batch_y[i]) +
-                                          "i.e. bounding boxes where xmax <= xmin and/or ymax <= ymin. " +
-                                          "This could mean that your dataset contains degenerate ground truth boxes, or that any image transformations you may apply might " +
-                                          "result in degenerate ground truth boxes, or that you are parsing the ground truth in the wrong coordinate format." +
-                                          "Degenerate ground truth bounding boxes may lead to NaN errors during the training.")
-                        elif degenerate_box_handling == 'remove':
-                            batch_y[i] = box_filter(batch_y[i])
-                            if (batch_y[i].size == 0) and not keep_images_without_gt:
-                                batch_items_to_remove.append(i)
+                        xmin = self.labels_format['xmin']
+                        ymin = self.labels_format['ymin']
+                        xmax = self.labels_format['xmax']
+                        ymax = self.labels_format['ymax']
+
+                        if np.any(batch_y[i][:,xmax] - batch_y[i][:,xmin] <= 0) or np.any(batch_y[i][:,ymax] - batch_y[i][:,ymin] <= 0):
+                            if degenerate_box_handling == 'warn':
+                                warnings.warn("Detected degenerate ground truth bounding boxes for batch item {} with bounding boxes {}, ".format(i, batch_y[i]) +
+                                              "i.e. bounding boxes where xmax <= xmin and/or ymax <= ymin. " +
+                                              "This could mean that your dataset contains degenerate ground truth boxes, or that any image transformations you may apply might " +
+                                              "result in degenerate ground truth boxes, or that you are parsing the ground truth in the wrong coordinate format." +
+                                              "Degenerate ground truth bounding boxes may lead to NaN errors during the training.")
+                            elif degenerate_box_handling == 'remove':
+                                batch_y[i] = box_filter(batch_y[i])
+                                if (batch_y[i].size == 0) and not keep_images_without_gt:
+                                    batch_items_to_remove.append(i)
 
             #########################################################################################
             # Remove any items we might not want to keep from the batch.

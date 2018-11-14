@@ -107,6 +107,23 @@ class ConvertTo3Channels:
         else:
             return image, labels
 
+class ConvertTo1Channel:
+    def __init__(self):
+        pass
+
+    def __call__(self, image, labels=None):
+        if image.ndim == 2:
+            image = image[:, :, np.newaxis]
+        elif image.ndim == 3:
+            image = np.mean(image[:, :, :3], -1, keepdims=True)
+
+        image = np.concatenate([image, ]*3, -1)
+
+        if labels is None:
+            return image
+        else:
+            return image, labels
+
 class Hue:
     '''
     Changes the hue of HSV images.

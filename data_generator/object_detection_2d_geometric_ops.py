@@ -78,12 +78,19 @@ class Resize:
                 labels[:, [xmin+1, xmax+1]] = np.round(labels[:, [xmin+1, xmax+1]] * (img_width / self.out_width), decimals=0)
                 return labels
 
-        if labels is None:
+        if labels.size == 0:
+            if return_inverter:
+                return image, np.array([]), inverter
+            else:
+                return image, np.array([])
+        elif labels is None:
             if return_inverter:
                 return image, inverter
             else:
                 return image
         else:
+            # import pdb
+            # pdb.set_trace()
             labels = np.copy(labels)
             labels[:, [ymin, ymax]] = np.round(labels[:, [ymin, ymax]] * (self.out_height / img_height), decimals=0)
             labels[:, [xmin, xmax]] = np.round(labels[:, [xmin, xmax]] * (self.out_width / img_width), decimals=0)

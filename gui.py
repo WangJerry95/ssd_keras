@@ -70,7 +70,7 @@ class App(QMainWindow):
     def openFileNameDialog(self):
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
-        self.image_path, _ = QFileDialog.getOpenFileName(self, "Select image", "./datasets/image/",
+        self.image_path, _ = QFileDialog.getOpenFileName(self, "Select image", "./examples/",
                                                          "All Files (*.*)", options=options)
         self.image = QImage(self.image_path)
         self.ui.label.setPixmap(QPixmap.fromImage(self.image))
@@ -140,7 +140,8 @@ class App(QMainWindow):
         classes = ['background',
                    'ship']
 
-        plt.figure()
+        plt.figure(figsize=(12, 12))
+        #plt.figure()
         plt.imshow(img)
 
         current_axis = plt.gca()
@@ -156,8 +157,10 @@ class App(QMainWindow):
             current_axis.add_patch(
                 plt.Rectangle((xmin, ymin), xmax - xmin, ymax - ymin, color=color, fill=False, linewidth=2))
             current_axis.text(xmin, ymin, label, size='x-large', color='white', bbox={'facecolor': color, 'alpha': 1.0})
-            plt.axis('off')
-            plt.savefig('result.png')
+
+        plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)
+        plt.margins(0, 0)
+        plt.savefig('result.png')
 
         # probability_map, feature_map = self.session.run([self.model.probability_map, self.model.feature_map],
         #                                                 feed_dict={self.inputs: input_tensor})

@@ -494,16 +494,16 @@ class DataGenerator:
                         # Check whether this class is supposed to be included in the dataset.
                         if (not self.include_classes == 'all') and (not class_id in self.include_classes): continue
                         pose = obj.find('pose', recursive=False).text
-                        truncated = int(obj.find('truncated', recursive=False).text)
+                        truncated = int(float(obj.find('truncated', recursive=False).text))
                         if exclude_truncated and (truncated == 1): continue
-                        difficult = int(obj.find('difficult', recursive=False).text)
+                        difficult = int(float(obj.find('difficult', recursive=False).text))
                         if exclude_difficult and (difficult == 1): continue
                         # Get the bounding box coordinates.
                         bndbox = obj.find('bndbox', recursive=False)
-                        xmin = int(bndbox.xmin.text)
-                        ymin = int(bndbox.ymin.text)
-                        xmax = int(bndbox.xmax.text)
-                        ymax = int(bndbox.ymax.text)
+                        xmin = int(float(bndbox.xmin.text))
+                        ymin = int(float(bndbox.ymin.text))
+                        xmax = int(float(bndbox.xmax.text))
+                        ymax = int(float(bndbox.ymax.text))
                         item_dict = {'folder': folder,
                                      'image_name': filename,
                                      'image_id': image_id,
